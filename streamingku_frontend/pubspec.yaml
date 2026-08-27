@@ -1,0 +1,81 @@
+name: StreamingKu
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # API & Network
+  http: ^1.2.1
+
+  # Video Player
+  video_player: ^2.8.1
+  chewie: ^1.7.0
+
+  # State Management
+  provider: ^6.1.1
+
+  # Image Caching
+  cached_network_image: ^3.3.1
+
+  # Local Storage
+  shared_preferences: ^2.2.3
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  
+  # 🔥 UNTUK GANTI LOGO APLIKASI
+  flutter_launcher_icons: ^0.14.4
+
+# ============================================================
+# 🔥 KONFIGURASI LOGO APLIKASI
+# ============================================================
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#121212"
+  adaptive_icon_foreground: "assets/images/logo.png"
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"
+
+# ============================================================
+# FLUTTER SECTION
+# ============================================================
+flutter:
+  uses-material-design: true
+
+  # 🔥 ASSETS - DAFTARKAN DI SINI
+  assets:
+    - assets/images/logo.png
+    # Tambahkan asset lain di bawah ini:
+    # - assets/images/background.jpg
+    # - assets/fonts/...
+
+  # 🔥 FONTS (jika ada)
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: fonts/CustomFont-Regular.ttf
+  #       - asset: fonts/CustomFont-Bold.ttf
+  #         weight: 700
