@@ -11,7 +11,7 @@ class StreamingScreen extends StatefulWidget {
   final String animeTitle;
   final String episodeTitle;
   final String? videoUrl;
-  final int initialProgress; // 🔥 TAMBAHKAN
+  final int initialProgress;
 
   const StreamingScreen({
     super.key,
@@ -19,7 +19,7 @@ class StreamingScreen extends StatefulWidget {
     required this.animeTitle,
     required this.episodeTitle,
     this.videoUrl,
-    this.initialProgress = 0, // 🔥 DEFAULT 0
+    this.initialProgress = 0,
   });
 
   @override
@@ -32,14 +32,12 @@ class _StreamingScreenState extends State<StreamingScreen> {
   bool _loading = true;
   bool _sending = false;
   
-  // Video Player
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isVideoInitialized = false;
   bool _isVideoLoading = true;
   String? _videoError;
 
-  // 🔥 HISTORY TRACKING
   int? _historyId;
   Timer? _progressTimer;
   int _currentProgress = 0;
@@ -54,7 +52,6 @@ class _StreamingScreenState extends State<StreamingScreen> {
     _startProgressTracking();
   }
 
-  /// 🔥 Buat history record
   Future<void> _createHistory() async {
     try {
       final result = await ApiService.instance.addHistory(
@@ -64,13 +61,12 @@ class _StreamingScreenState extends State<StreamingScreen> {
         duration: 0,
       );
       _historyId = result['id'];
-      print('✅ History created: $_historyId');
+      debugPrint('✅ History created: $_historyId');
     } catch (e) {
-      print('⚠️ Gagal membuat history: $e');
+      debugPrint('⚠️ Gagal membuat history: $e');
     }
   }
 
-  /// 🔥 Start progress tracking
   void _startProgressTracking() {
     _progressTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_videoController != null && _videoController!.value.isInitialized) {
@@ -86,7 +82,6 @@ class _StreamingScreenState extends State<StreamingScreen> {
     });
   }
 
-  /// 🔥 Update progress ke server
   Future<void> _updateProgress() async {
     if (_historyId == null) return;
     
@@ -101,7 +96,6 @@ class _StreamingScreenState extends State<StreamingScreen> {
     }
   }
 
-  /// 🔥 Save progress akhir
   Future<void> _saveFinalProgress() async {
     if (_historyId == null) return;
     
@@ -116,17 +110,34 @@ class _StreamingScreenState extends State<StreamingScreen> {
             progress: position,
             duration: duration,
           );
-          print('💾 Final progress saved: $position / $duration');
+          debugPrint('💾 Final progress saved: $position / $duration');
         } catch (e) {
-          print('⚠️ Gagal save final progress: $e');
+          debugPrint('⚠️ Gagal save final progress: $e');
         }
       }
     }
   }
 
   void _initializeVideo() {
-    final videoUrl = widget.videoUrl;
+    // 🔥 AMBIL URL DARI WIDGET
+    String? videoUrl = widget.videoUrl;
     
+    // 🔥 JIKA URL KOSONG, GUNAKAN HARCODE UNTUK TESTING
+    if (videoUrl == null || videoUrl.isEmpty) {
+      // 🔥 HARCODE URL UNTUK TESTING (GANTI SESUAI IP KAMU)
+      videoUrl = 'http://192.168.110.232:8000/storage/videos/kimi-no-nawa.mp4';
+      debugPrint('🎬 Menggunakan hardcode URL: $videoUrl');
+    }
+    
+    // 🔥 PASTIKAN MENGGUNAKAN HTTP UNTUK LOCALHOST
+    if (videoUrl.startsWith('https://') && 
+        (videoUrl.contains('192.168.110.232') || 
+         videoUrl.contains('localhost') || 
+         videoUrl.contains('127.0.0.1'))) {
+      videoUrl = videoUrl.replaceFirst('https://', 'http://');
+      debugPrint('🔄 Convert HTTPS ke HTTP: $videoUrl');
+    }
+
     if (videoUrl == null || videoUrl.isEmpty) {
       setState(() {
         _isVideoLoading = false;
@@ -135,8 +146,8 @@ class _StreamingScreenState extends State<StreamingScreen> {
       return;
     }
 
-    print('🎬 Memuat video: $videoUrl');
-    print('⏩ Initial progress: ${widget.initialProgress} detik');
+    debugPrint('🎬 Memuat video: $videoUrl');
+    debugPrint('⏩ Initial progress: ${widget.initialProgress} detik');
     
     _videoController = VideoPlayerController.networkUrl(
       Uri.parse(videoUrl),
@@ -154,10 +165,9 @@ class _StreamingScreenState extends State<StreamingScreen> {
           _totalDuration = _videoController!.value.duration.inSeconds;
         });
         
-        // 🔥 SET POSISI AWAL KE PROGRESS YANG DISIMPAN
         if (widget.initialProgress > 0 && widget.initialProgress < _totalDuration) {
           _videoController!.seekTo(Duration(seconds: widget.initialProgress));
-          print('⏩ Seek to: ${widget.initialProgress} seconds');
+          debugPrint('⏩ Seek to: ${widget.initialProgress} seconds');
         }
         
         _chewieController = ChewieController(
@@ -176,10 +186,10 @@ class _StreamingScreenState extends State<StreamingScreen> {
           ),
         );
         
-        print('✅ Video siap diputar');
+        debugPrint('✅ Video siap diputar');
       }
     }).catchError((error) {
-      print('❌ Error video: $error');
+      debugPrint('❌ Error video: $error');
       if (mounted) {
         setState(() {
           _isVideoLoading = false;

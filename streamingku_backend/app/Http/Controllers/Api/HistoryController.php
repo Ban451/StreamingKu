@@ -8,6 +8,7 @@ use App\Models\Film;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class HistoryController extends Controller
 {
@@ -35,7 +36,9 @@ class HistoryController extends Controller
      */
     public function store(Request $request)
     {
-        // 🔥 VALIDASI
+        // 🔥 LOG REQUEST
+        Log::info('📥 Store History Request:', $request->all());
+
         $validator = Validator::make($request->all(), [
             'film_id' => 'required|exists:films,id',
             'episode_id' => 'nullable|exists:episodes,id',
@@ -44,6 +47,7 @@ class HistoryController extends Controller
         ]);
 
         if ($validator->fails()) {
+            Log::warning('⚠️ Validasi gagal:', $validator->errors()->toArray());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validasi gagal',
@@ -53,24 +57,24 @@ class HistoryController extends Controller
 
         $user = Auth::user();
         
-        // 🔥 CEK USER
         if (!$user) {
+            Log::error('❌ User tidak terautentikasi');
             return response()->json([
                 'status' => 'error',
                 'message' => 'User tidak terautentikasi'
             ], 401);
         }
 
-        // 🔥 CEK FILM
-        $film = Film::find($request->film_id);
-        if (!$film) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Film tidak ditemukan'
-            ], 404);
-        }
-
         try {
+            // 🔥 CEK APAKAH FILM ADA
+            $film = Film::find($request->film_id);
+            if (!$film) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Film tidak ditemukan'
+                ], 404);
+            }
+
             // 🔥 UPDATE ATAU CREATE HISTORY
             $history = History::updateOrCreate(
                 [
@@ -85,32 +89,31 @@ class HistoryController extends Controller
                 ]
             );
 
+            Log::info('✅ History saved:', [
+                'id' => $history->id,
+                'user_id' => $history->user_id,
+                'film_id' => $history->film_id,
+                'progress' => $history->progress,
+                'duration' => $history->duration,
+            ]);
+
             $history->load('film');
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'History berhasil disimpan',
-                'data' => [
-                    'id' => $history->id,
-                    'user_id' => $history->user_id,
-                    'film_id' => $history->film_id,
-                    'film' => $history->film,
-                    'episode_id' => $history->episode_id,
-                    'progress' => $history->progress,
-                    'duration' => $history->duration,
-                    'progress_percent' => $history->progress_percent ?? 0,
-                    'last_watched_at' => $history->last_watched_at,
-                    'created_at' => $history->created_at,
-                    'updated_at' => $history->updated_at,
-                ]
+                'data' => $history
             ], 201);
 
         } catch (\Exception $e) {
-            // 🔥 TAMPILKAN ERROR DETAIL
+            Log::error('❌ Error saving history:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menyimpan history: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'message' => 'Gagal menyimpan history: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -121,6 +124,11 @@ class HistoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        Log::info('📥 Update Progress Request:', [
+            'id' => $id,
+            'data' => $request->all()
+        ]);
+
         $validator = Validator::make($request->all(), [
             'progress' => 'required|integer|min:0',
             'duration' => 'nullable|integer|min:0',
@@ -152,6 +160,12 @@ class HistoryController extends Controller
                 'last_watched_at' => now(),
             ]);
 
+            Log::info('✅ Progress updated:', [
+                'id' => $history->id,
+                'progress' => $history->progress,
+                'duration' => $history->duration,
+            ]);
+
             $history->load('film');
 
             return response()->json([
@@ -161,6 +175,11 @@ class HistoryController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('❌ Error updating progress:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal mengupdate progress: ' . $e->getMessage()
@@ -185,19 +204,11 @@ class HistoryController extends Controller
             ], 404);
         }
 
-        try {
-            $history->delete();
+        $history->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'History berhasil dihapus'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghapus history: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'History berhasil dihapus'
+        ]);
     }
 }

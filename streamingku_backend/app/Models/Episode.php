@@ -17,19 +17,12 @@ class Episode extends Model
         'is_active'
     ];
 
-    protected $casts = [
-        'episode_number' => 'integer',
-        'views_count' => 'integer',
-        'is_active' => 'boolean',
-    ];
-
-    // Relasi ke Film
     public function film()
     {
         return $this->belongsTo(Film::class);
     }
 
-    // Accessor untuk mendapatkan URL video lengkap
+    // 🔥 PERBAIKI ACCESSOR VIDEO URL
     public function getVideoUrlAttribute($value)
     {
         if (!$value) {
@@ -41,23 +34,19 @@ class Episode extends Model
             return $value;
         }
 
+        // 🔥 UNTUK LOCALHOST - gunakan asset() dengan benar
         // Jika path di storage
         if (Storage::disk('public')->exists($value)) {
-            return Storage::url($value);
-        }
-
-        // Jika path di public
-        if (file_exists(public_path($value))) {
+            // 🔥 PAKAI asset() TANPA 'storage/' KARENA SUDAH ADA DI URL
             return asset($value);
         }
 
-        // Fallback: coba dengan storage
-        return asset('storage/' . $value);
-    }
+        // Jika path dimulai dengan /storage/
+        if (str_starts_with($value, '/storage/')) {
+            return asset($value);
+        }
 
-    // Mutator untuk menyimpan video_url
-    public function setVideoUrlAttribute($value)
-    {
-        $this->attributes['video_url'] = $value;
+        // Fallback
+        return asset('storage/' . ltrim($value, '/'));
     }
 }

@@ -18,7 +18,6 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _loading = true;
   String? _error;
   
-  // 🔥 BOOKMARK STATE
   bool _isBookmarked = false;
   bool _isBookmarkLoading = false;
 
@@ -37,32 +36,30 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       final detail = await ApiService.instance.getAnimeDetail(widget.animeId);
       
-      print('📺 ====== DETAIL FILM ======');
-      print('📺 Title: ${detail.title}');
-      print('📺 ID: ${detail.id}');
-      print('📺 Episodes: ${detail.episodes.length}');
+      debugPrint('📺 ====== DETAIL FILM ======');
+      debugPrint('📺 Title: ${detail.title}');
+      debugPrint('📺 ID: ${detail.id}');
+      debugPrint('📺 Episodes: ${detail.episodes.length}');
       for (var episode in detail.episodes) {
-        print('📺 Episode ${episode.episodeNumber}: ${episode.title}');
-        print('📺   Video URL: ${episode.videoUrl}');
+        debugPrint('📺 Episode ${episode.episodeNumber}: ${episode.title}');
+        debugPrint('📺   Video URL: ${episode.videoUrl}');
       }
-      print('📺 ==========================');
+      debugPrint('📺 ==========================');
       
       setState(() {
         _detail = detail;
       });
 
-      // 🔥 CEK STATUS BOOKMARK SETELAH LOAD DETAIL
       await _checkBookmarkStatus();
 
     } catch (e) {
-      print('❌ Error load detail: $e');
+      debugPrint('❌ Error load detail: $e');
       setState(() => _error = 'Gagal memuat detail anime: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  /// 🔥 CEK STATUS BOOKMARK
   Future<void> _checkBookmarkStatus() async {
     if (_detail == null) return;
     
@@ -74,11 +71,10 @@ class _DetailScreenState extends State<DetailScreen> {
         });
       }
     } catch (e) {
-      print('⚠️ Gagal cek bookmark: $e');
+      debugPrint('⚠️ Gagal cek bookmark: $e');
     }
   }
 
-  /// 🔥 TOGGLE BOOKMARK
   Future<void> _toggleBookmark() async {
     if (_detail == null || _isBookmarkLoading) return;
 
@@ -86,7 +82,6 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       if (_isBookmarked) {
-        // Hapus bookmark
         await ApiService.instance.removeBookmark(_detail!.id);
         setState(() => _isBookmarked = false);
         
@@ -98,7 +93,6 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         );
       } else {
-        // Tambah bookmark
         await ApiService.instance.addBookmark(_detail!.id);
         setState(() => _isBookmarked = true);
         
@@ -123,23 +117,34 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  /// Helper untuk mendapatkan URL video lengkap dengan HTTPS
+  /// 🔥 Helper untuk mendapatkan URL video lengkap
   String _getFullVideoUrl(String? videoUrl) {
     if (videoUrl == null || videoUrl.isEmpty) {
       return '';
     }
     
+    // 🔥 JIKA SUDAH URL LENGKAP (HTTP/HTTPS)
     if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
-      if (videoUrl.startsWith('http://')) {
-        videoUrl = videoUrl.replaceFirst('http://', 'https://');
-        print('🔄 Convert HTTP ke HTTPS: $videoUrl');
+      // 🔥 PASTIKAN HTTP UNTUK LOCALHOST
+      if (videoUrl.startsWith('https://') && 
+          (videoUrl.contains('192.168.110.232') || 
+           videoUrl.contains('localhost') || 
+           videoUrl.contains('127.0.0.1'))) {
+        videoUrl = videoUrl.replaceFirst('https://', 'http://');
+        debugPrint('🔄 Convert HTTPS ke HTTP: $videoUrl');
       }
       return videoUrl;
     }
     
+    // 🔥 JIKA RELATIVE, TAMBAHKAN BASE URL
     String cleanUrl = videoUrl.startsWith('/') ? videoUrl.substring(1) : videoUrl;
-    final baseUrl = ApiService.baseUrl;
     
+    // 🔥 PAKAI IP KOMPUTER + HTTP
+    final ip = '192.168.110.232';
+    final port = '8000';
+    final baseUrl = 'http://$ip:$port';
+    
+    // 🔥 BUILD URL LENGKAP
     if (cleanUrl.startsWith('storage/') || cleanUrl.startsWith('videos/')) {
       return '$baseUrl/$cleanUrl';
     }
@@ -150,13 +155,13 @@ class _DetailScreenState extends State<DetailScreen> {
   void _openEpisode(AnimeEpisode ep, AnimeDetail detail) {
     String? videoUrl = _getFullVideoUrl(ep.videoUrl);
     
-    print('🎬 ====== PLAY EPISODE ======');
-    print('🎬 Film ID: ${detail.id}');
-    print('🎬 Anime: ${detail.title}');
-    print('🎬 Episode: ${ep.episodeNumber} - ${ep.title}');
-    print('🎬 Raw URL: ${ep.videoUrl}');
-    print('🎬 Final URL: $videoUrl');
-    print('🎬 ==========================');
+    debugPrint('🎬 ====== PLAY EPISODE ======');
+    debugPrint('🎬 Film ID: ${detail.id}');
+    debugPrint('🎬 Anime: ${detail.title}');
+    debugPrint('🎬 Episode: ${ep.episodeNumber} - ${ep.title}');
+    debugPrint('🎬 Raw URL: ${ep.videoUrl}');
+    debugPrint('🎬 Final URL: $videoUrl');
+    debugPrint('🎬 ==========================');
     
     if (videoUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,6 +181,7 @@ class _DetailScreenState extends State<DetailScreen> {
           animeTitle: detail.title,
           episodeTitle: 'Episode ${ep.episodeNumber} - ${ep.title}',
           videoUrl: videoUrl,
+          initialProgress: 0,
         ),
       ),
     );
@@ -230,7 +236,6 @@ class _DetailScreenState extends State<DetailScreen> {
     
     return CustomScrollView(
       slivers: [
-        // Banner / Poster
         SliverAppBar(
           backgroundColor: AppColors.background,
           expandedHeight: 250,
@@ -263,7 +268,6 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
           ),
           actions: [
-            // 🔥 BOOKMARK BUTTON DI APP BAR
             IconButton(
               icon: _isBookmarkLoading
                   ? const SizedBox(
@@ -289,7 +293,6 @@ class _DetailScreenState extends State<DetailScreen> {
           padding: const EdgeInsets.all(16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // Judul
               Text(
                 detail.title,
                 style: const TextStyle(
@@ -300,7 +303,6 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               const SizedBox(height: 8),
 
-              // Info tambahan (Release Year, Rating, Duration)
               if (detail.releaseYear != null || detail.rating != null || detail.duration != null)
                 Wrap(
                   spacing: 16,
@@ -316,7 +318,6 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
               const SizedBox(height: 12),
 
-              // Genre
               if (detail.genres.isNotEmpty) ...[
                 Wrap(
                   spacing: 8,
@@ -340,7 +341,6 @@ class _DetailScreenState extends State<DetailScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Tombol Aksi
               Row(
                 children: [
                   Expanded(
@@ -423,7 +423,6 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Sinopsis
               const Text(
                 'Sinopsis',
                 style: TextStyle(
@@ -443,7 +442,6 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Daftar Episode
               const Text(
                 'Daftar Episode',
                 style: TextStyle(

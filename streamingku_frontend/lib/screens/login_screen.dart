@@ -41,31 +41,26 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      print('🔐 Mencoba login dengan email: $email');
+      debugPrint('🔐 Mencoba login dengan email: $email');
       
       final user = await ApiService.instance.login(
         email: email,
         password: password,
       );
 
-      print('✅ Login berhasil: ${user.name}');
+       debugPrint('✅ Login berhasil: ${user.name}'); 
 
-      // Verifikasi token tersimpan
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      print('🔑 Token setelah login: ${token != null && token.isNotEmpty ? 'Ada' : 'TIDAK ADA'}');
-      if (token != null && token.isNotEmpty) {
-        print('🔑 Token: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
-      }
+      debugPrint('🔑 Token setelah login: ${token != null && token.isNotEmpty ? 'Ada' : 'TIDAK ADA'}');
 
       if (!mounted) return;
 
-      // Navigasi ke Home dengan pushReplacement
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainNavigation()),
       );
     } catch (e) {
-      print('❌ Login error: $e');
+      debugPrint('❌ Login error: $e');
       setState(() {
         _error = e.toString().replaceAll('Exception: ', '');
       });
@@ -86,33 +81,49 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
+              // 🔥 LOGO - PAKAI ASSET
               Container(
-                padding: const EdgeInsets.all(16),
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.accentCyan.withOpacity(0.2),
-                      blurRadius: 20,
+                      color: AppColors.accentCyan.withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 5,
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: AppColors.accentCyan,
-                  size: 40,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.accentCyan,
+                      size: 50,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               const Text(
                 'StreamingKu',
                 style: TextStyle(
                   color: AppColors.accentCyan,
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Streaming Anime & Film',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
                 ),
               ),
               const SizedBox(height: 32),
